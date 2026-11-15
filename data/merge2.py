@@ -248,10 +248,10 @@ def load_polygons(path):
 def assign_polygon(east, north, polygons):
     """Return (name, color) of the first polygon containing the point (boundary included), else NA."""
     if pd.isna(east) or pd.isna(north):
-        return NO_POLYGON, NO_POLYGON_COLOR
+        return NO_POLYGON, "MINADO_NO_PLANEADO"
     point = Point(east, north)
-    return next(((name, color) for name, color, prepared in polygons if prepared.covers(point)),
-                (NO_POLYGON, NO_POLYGON_COLOR))
+    return next(((name, "MINADO_PLANEADO") for name, color, prepared in polygons if prepared.covers(point)),
+                (NO_POLYGON, "MINADO_NO_PLANEADO"))
 
 
 # ---------- Palas (shovel coordinates) ----------
@@ -356,7 +356,7 @@ def merge_record(record, candidate, key, polygons):
     for col in ("HORA", "ESTE", "NORTE", "latitude", "longitude", *AVG_COLS):
         merged[col] = candidate.get(col)
     merged["palas_matches"] = candidate.get("palas_matches", 0)
-    merged["polygon"], merged["polygon_color"] = assign_polygon(merged["east_avg"], merged["north_avg"], polygons)
+    merged["polygon"], merged["COMPLIANCE"] = assign_polygon(merged["east_avg"], merged["north_avg"], polygons)
     return merged, merged["polygon"]
 
 
