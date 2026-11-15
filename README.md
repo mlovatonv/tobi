@@ -7,7 +7,7 @@ The project takes raw fleet-management exports (shovel GPS positions, loading/du
 ## What it does
 
 1. **Diagnose** the raw geo data (`data/check.py`).
-2. **Merge** shovel positions with loading cycles and classify every point by mining polygon (`data/merge.py`).
+2. **Merge** shovel positions with loading cycles and classify every point by mining polygon (`data/merge.py`, or `data/merge2.py` for a one-row-per-cycle CSV).
 3. **Visualize** the resulting GeoJSON in a Traccar web map, served with a local satellite tile proxy (`traccar/server.py`).
 
 ## Repository layout
@@ -16,6 +16,7 @@ The project takes raw fleet-management exports (shovel GPS positions, loading/du
 | --- | --- |
 | [data/check.py](data/check.py) | Diagnostic script for large point datasets |
 | [data/merge.py](data/merge.py) | Pipeline: time-aware join + polygon classification + GeoJSON export |
+| [data/merge2.py](data/merge2.py) | Pipeline variant: one output row per loading cycle, using the center of the matched shovel coordinates (CSV only) |
 | [traccar/](traccar) | Submodule: fork of Traccar ([mlovatonv/traccar](https://github.com/mlovatonv/traccar)) |
 | [traccar/traccar-web/](traccar/traccar-web) | Nested submodule: fork of traccar-web ([mlovatonv/traccar-web](https://github.com/mlovatonv/traccar-web)) |
 | [traccar/server.py](traccar/server.py) | Tile server / proxy for satellite imagery |
@@ -46,6 +47,21 @@ cd data
 python merge.py                                              # all dates
 python merge.py --start-date 20260101 --end-date 20260131    # inclusive, on cycle date (Fecha)
 python merge.py --start-date 20260115                        # from that date onward
+```
+
+### `data/merge2.py`: one row per cycle
+
+A leaner variant of the join that outputs only `PalasCargaDescarga.csv` (no GeoJSON), with exactly one row per row of `CargaDescarga.csv` (or per cycle inside the date range when a filter is given).
+
+- **Same matching rule** as `merge.py` (equipment key, `PERIODO == Fecha`, `HORA` inside the cycle, overnight cycles supported).
+- **Center of matched coordinates**: when several shovel positions match a cycle, `east_avg`/`north_avg` are the mean of their UTM coordinates and `latitude_avg`/`longitude_avg` are that center reprojected to WGS84. The original Palas fields (`EQUIPO`, `HORA`, `ESTE`, `NORTE`, `latitude`, `longitude`, ...) come from the match closest to the cycle start. `palas_matches` holds the number of matches.
+- **Polygon of the center**: `polygon` is the first polygon (boundaries included) containing the center, or `NA` when it is outside all polygons or there are no coordinates. `polygon_color` is a deterministic HEX color per polygon (`#9E9E9E` for `NA`).
+- **Unmatched cycles are kept**: unknown equipment, invalid cycle time/date, or no `HORA` inside the cycle leave the Palas fields blank with `polygon = NA`.
+- Takes the same `--start-date` / `--end-date` options and writes the log to `PalasCargaDescarga.log`.
+
+```bash
+python merge2.py                                             # all dates
+python merge2.py --start-date 20260101 --end-date 20260131
 ```
 
 ### `data/check.py`: map point diagnostics

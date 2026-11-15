@@ -11,10 +11,10 @@ vertex-order column is available. Spatial tests use UTM coordinates; GeoJSON out
 uses WGS84 [longitude, latitude].
 
 Usage:
-  python palas_join.py                                        # all dates
-  python palas_join.py --start-date 20260101 --end-date 20260131
-  python palas_join.py --start-date 20260115                  # from that date onward
-  python palas_join.py --end-date 20260115                    # up to and including that date
+  python merge.py                                        # all dates
+  python merge.py --start-date 20260101 --end-date 20260131
+  python merge.py --start-date 20260115                  # from that date onward
+  python merge.py --end-date 20260115                    # up to and including that date
 
 Dates are YYYYMMDD (YYYY-MM-DD also accepted) and both bounds are inclusive. The filter is
 applied to the cycle date (Fecha).
