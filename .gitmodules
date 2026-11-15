@@ -1,3 +1,4 @@
 [submodule "traccar"]
     path = traccar
     url = git@github.com:mlovatonv/traccar.git
+    branch = master
