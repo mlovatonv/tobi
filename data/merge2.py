@@ -317,15 +317,15 @@ def build_lookup(palas, carga_columns):
     return by_key, dict.fromkeys(lookup.columns)
 
 
-def find_matches(by_key, key, day, start, end):
+def find_matches(by_key, key, day, start, end, tolerance=0):
     """Palas records for this equipment/date whose HORA falls inside the cycle."""
     same_day = by_key.get((key, day), [])
     if start <= end:
-        return [c for c in same_day if start <= c["__palas_clock"] <= end]
+        return [c for c in same_day if start - tolerance <= c["__palas_clock"] <= end + tolerance]
     # Overnight cycle: late part on Fecha, early part on the following day.
     next_day = by_key.get((key, day + timedelta(days=1)), [])
-    return ([c for c in same_day if c["__palas_clock"] >= start]
-            + [c for c in next_day if c["__palas_clock"] <= end])
+    return ([c for c in same_day if c["__palas_clock"] >= start - tolerance]
+            + [c for c in next_day if c["__palas_clock"] <= end + tolerance])
 
 
 def pick_match(matches, start):
@@ -384,7 +384,14 @@ def process_chunk(chunk, by_key, blank, known_keys, polygons, start_date, end_da
         else:
             matches = find_matches(by_key, key, day, start, end)
             if not matches:
-                stats["no_time_match"] += 1
+                # MAS MENOS 5 MINUTOS
+                matches2 = find_matches(by_key, key, day, start, end, tolerance=5*60)
+
+                if not matches2:
+                    stats["no_time_match"] += 1
+                else:
+                    stats["multiple_matches"] += len(matches2) > 1
+                    candidate = build_candidate(matches2, start)
             else:
                 stats["multiple_matches"] += len(matches) > 1
                 candidate = build_candidate(matches, start)
